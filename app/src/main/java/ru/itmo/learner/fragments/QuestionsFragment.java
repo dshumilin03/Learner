@@ -45,6 +45,7 @@ public class QuestionsFragment extends Fragment {
         viewModel = new ViewModelProvider(requireActivity()).get(QuestionsViewModel.class);
         viewModel.setContext(requireContext());
         viewModel.getFilteredCards().observe(getViewLifecycleOwner(), this::updateQuestionsUI);
+        viewModel.getCardsLiveData().observe(getViewLifecycleOwner(), this::updateQuestionsUI);
 
         FloatingActionButton fab = requireActivity().findViewById(R.id.fab);
         fab.setOnClickListener(v -> showAddQuestionDialog());
@@ -78,13 +79,11 @@ public class QuestionsFragment extends Fragment {
                     showAnswerDialog((Question) card);
                 } else {
                     viewModel.toggleCardSelection(card);
-                    updateQuestionsUI(viewModel.getAllCards());
                 }
             });
             button.setOnLongClickListener(v -> {
 
                 viewModel.toggleCardSelection(card);
-                updateQuestionsUI(viewModel.getAllCards());
                 return true;
             });
 
@@ -109,7 +108,6 @@ public class QuestionsFragment extends Fragment {
                         viewModel.getDefaultBackgroundColor(), viewModel.getTopicTextColor());
 
                 viewModel.addCard(newQuestion);
-                updateQuestionsUI(viewModel.getAllCards());
             }
         });
 

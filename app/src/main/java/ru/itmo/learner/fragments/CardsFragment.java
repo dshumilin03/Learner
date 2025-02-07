@@ -41,8 +41,8 @@ public class CardsFragment extends Fragment {
         viewModel = new ViewModelProvider(requireActivity()).get(SharedViewModel.class);
         viewModel.setContext(requireContext());
 
-        viewModel.getFilteredCards().observe(getViewLifecycleOwner(), cards -> updateCardsUI(cards));
-
+        viewModel.getFilteredCards().observe(getViewLifecycleOwner(), this::updateCardsUI);
+        viewModel.getCardsLiveData().observe(getViewLifecycleOwner(), this::updateCardsUI);
         FloatingActionButton fab = requireActivity().findViewById(R.id.fab);
         fab.setOnClickListener(v -> showAddCardDialog());
     }
@@ -77,15 +77,12 @@ public class CardsFragment extends Fragment {
                     startActivity(intent);
                 } else {
                     viewModel.toggleCardSelection(card);
-                    updateCardsUI(viewModel.getAllCards());
                 }
             });
 
             button.setOnLongClickListener(v -> {
 
                 viewModel.toggleCardSelection(card);
-                //todo сделать обновление выеделенных
-                updateCardsUI(viewModel.getAllCards());
 
                 return true;
             });
@@ -110,7 +107,6 @@ public class CardsFragment extends Fragment {
 
                 Card newTopic = new Topic(title, viewModel.getDefaultBackgroundColor(), viewModel.getTopicTextColor());
                 viewModel.addCard(newTopic);
-                updateCardsUI(viewModel.getAllCards());
             }
         });
 

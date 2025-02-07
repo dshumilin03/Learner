@@ -181,6 +181,10 @@ public class SharedViewModel extends AndroidViewModel implements CardViewModel {
         return cardsLiveData.getValue();
     }
 
+    public MutableLiveData<List<Card>> getCardsLiveData() {
+        return cardsLiveData;
+    }
+
     private void updateSelectedCards() {
         List<Card> selected = new ArrayList<>();
 

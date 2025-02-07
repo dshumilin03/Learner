@@ -52,6 +52,10 @@ public class QuestionsViewModel extends AndroidViewModel implements CardViewMode
         return cardsLiveData.getValue();
     }
 
+    public MutableLiveData<List<Card>> getCardsLiveData() {
+        return cardsLiveData;
+    }
+
     private void initColors() {
         TypedValue value = new TypedValue();
         Context context = contextLiveData.getValue();
