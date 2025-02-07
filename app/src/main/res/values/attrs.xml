@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <attr name="popupBackgroundColor" format="reference" />
+    <attr name="popupBorderColor" format="reference" />
+    <attr name="cardsBackgroundColor" format="reference" />
+    <attr name="cardsTextColor" format="reference" />
+    <attr name="cardsBackgroundColorSelected" format="reference" />
+    <attr name="backgroundColorPrimary" format="reference" />
+</resources>

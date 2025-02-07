@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="horizontal"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:padding="8sp"
+    android:background="@drawable/popup_border"
+    android:gravity="center_vertical">
+
+    <ImageView
+        android:id="@+id/sun_icon"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
+        android:src="@drawable/sun_icon"
+        android:visibility="gone" />
+
+    <androidx.appcompat.widget.SwitchCompat
+        android:id="@+id/theme_switch"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:checked="false" />
+
+    <ImageView
+        android:id="@+id/moon_icon"
+        android:layout_width="36sp"
+        android:layout_height="36sp"
+        android:src="@drawable/moon_icon" />
+</LinearLayout>

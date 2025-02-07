@@ -1,0 +1,26 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:context="ru.itmo.learner.activities.MainActivity">
+
+    <item
+        android:id="@+id/action_theme_switch"
+        android:title="@string/switch_theme"
+        app:showAsAction="never"
+        app:actionViewClass="androidx.appcompat.widget.SwitchCompat"
+        />
+
+    <item
+        android:id="@+id/action_delete"
+        android:title="@string/delete_cards"
+        android:icon="@android:drawable/ic_menu_delete"
+        app:showAsAction="always"
+        android:visible="false"/>
+
+    <item
+        android:id="@+id/search_view"
+        android:title="@string/search"
+        android:icon="@android:drawable/ic_menu_search"
+        app:actionViewClass="androidx.appcompat.widget.SearchView"
+        app:showAsAction="always|collapseActionView"/>
+</menu>

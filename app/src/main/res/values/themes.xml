@@ -1,0 +1,13 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- Base application theme. -->
+    <style name="Base.Theme.Learner" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="popupBackgroundColor">@color/white</item>
+        <item name="popupBorderColor">@color/black</item>
+        <item name="cardsBackgroundColor">@color/white</item>
+        <item name="cardsTextColor">@color/black</item>
+        <item name="cardsBackgroundColorSelected">@color/slightly_gray</item>
+        <item name="backgroundColorPrimary">@color/white</item>
+    </style>
+
+    <style name="Theme.Learner" parent="Base.Theme.Learner" />
+</resources>
