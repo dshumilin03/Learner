@@ -8,13 +8,13 @@ import androidx.appcompat.app.AppCompatDelegate;
 import androidx.fragment.app.FragmentTransaction;
 
 import ru.itmo.learner.R;
-import ru.itmo.learner.fragments.CardsFragment;
+import ru.itmo.learner.fragments.TopicsFragment;
 import ru.itmo.learner.fragments.ToolbarFragment;
 
 public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-
+// todo create theme manager
         SharedPreferences prefs = getSharedPreferences("ThemePrefs", MODE_PRIVATE);
         boolean isDarkMode = prefs.getBoolean("isDarkMode", true);
         if (isDarkMode) {
@@ -30,7 +30,7 @@ public class MainActivity extends AppCompatActivity {
         if (savedInstanceState == null) {
             FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
             ft.replace(R.id.toolbar_container, new ToolbarFragment());
-            ft.replace(R.id.content_container, new CardsFragment());
+            ft.replace(R.id.content_container, new TopicsFragment());
             ft.commit();
         }
     }

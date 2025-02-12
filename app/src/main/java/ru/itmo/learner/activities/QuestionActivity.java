@@ -17,7 +17,7 @@ public class QuestionActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-
+// todo theme manager
         SharedPreferences prefs = getSharedPreferences("ThemePrefs", MODE_PRIVATE);
         boolean isDarkMode = prefs.getBoolean("isDarkMode", true);
         AppCompatDelegate.setDefaultNightMode(

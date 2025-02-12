@@ -14,4 +14,10 @@ public interface CardViewModel {
     void deleteSelectedCards();
     LiveData<List<Card>> getSelectedCards();
     boolean isSelectionMode();
+
+    int getDefaultBackgroundColor();
+
+   int getSelectedBackgroundColor();
+
+   int getTopicTextColor();
 }

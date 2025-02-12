@@ -4,7 +4,6 @@ import static android.content.Context.MODE_PRIVATE;
 
 import android.app.AlertDialog;
 import android.content.SharedPreferences;
-import android.graphics.drawable.GradientDrawable;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -21,7 +20,9 @@ import java.util.List;
 
 import ru.itmo.learner.R;
 import ru.itmo.learner.activities.QuestionActivity;
+import ru.itmo.learner.factories.CardButtonFactory;
 import ru.itmo.learner.model.Card;
+import ru.itmo.learner.model.CardDataPrefs;
 import ru.itmo.learner.model.Question;
 import ru.itmo.learner.databinding.FragmentCardsBinding;
 import ru.itmo.learner.viewModels.QuestionsViewModel;
@@ -31,64 +32,47 @@ public class QuestionsFragment extends Fragment {
     private FragmentCardsBinding binding;
     private QuestionsViewModel viewModel;
     private LinearLayout linearLayoutButtons;
+    private CardDataPrefs questionDataPrefs;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              android.os.Bundle savedInstanceState) {
         binding = FragmentCardsBinding.inflate(inflater, container, false);
         linearLayoutButtons = binding.linearLayoutButtons;
+
         return binding.getRoot();
     }
 
     @Override
     public void onViewCreated(View view, android.os.Bundle savedInstanceState) {
         viewModel = new ViewModelProvider(requireActivity()).get(QuestionsViewModel.class);
-        viewModel.setContext(requireContext());
+        viewModel.init(requireContext());
         viewModel.getFilteredCards().observe(getViewLifecycleOwner(), this::updateQuestionsUI);
         viewModel.getCardsLiveData().observe(getViewLifecycleOwner(), this::updateQuestionsUI);
 
         FloatingActionButton fab = requireActivity().findViewById(R.id.fab);
         fab.setOnClickListener(v -> showAddQuestionDialog());
+
+        SharedPreferences prefs = requireContext().getSharedPreferences("QuestionPrefs-" + QuestionActivity.topicName, MODE_PRIVATE);
+        String key = "answers-" + QuestionActivity.topicName + "-";
+        questionDataPrefs = new CardDataPrefs(prefs, key);
     }
 
     private void updateQuestionsUI(List<Card> cards) {
         linearLayoutButtons.removeAllViews();
+        CardButtonFactory factory = new CardButtonFactory(requireContext(), linearLayoutButtons, viewModel);
         for (Card card : cards) {
-            Button button = new Button(requireContext());
-            button.setText(card.getTitle());
 
-            LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.MATCH_PARENT, 150);
-            params.setMargins(64, 16, 64, 16);
-            button.setLayoutParams(params);
-
-            int backgroundColor = card.isSelected() ? viewModel.getSelectedBackgroundColor()
-                    : viewModel.getDefaultBackgroundColor();
-
-            GradientDrawable drawable = new GradientDrawable();
-            drawable.setShape(GradientDrawable.RECTANGLE);
-            drawable.setCornerRadius(30f);
-            drawable.setColor(backgroundColor);
-
-            button.setBackground(drawable);
-            button.setTextColor(viewModel.getTopicTextColor());
-
-            button.setOnClickListener(v -> {
-
+            factory.createCardUI(card, v -> { // OnClickListener
                 if (!viewModel.isSelectionMode()) {
                     showAnswerDialog((Question) card);
                 } else {
                     viewModel.toggleCardSelection(card);
                 }
-            });
-            button.setOnLongClickListener(v -> {
-
+            }, v -> { // OnLongClickListener
                 viewModel.toggleCardSelection(card);
                 return true;
             });
-
-            linearLayoutButtons.addView(button);
-            card.setButton(button);
         }
     }
 
@@ -104,8 +88,7 @@ public class QuestionsFragment extends Fragment {
 
             String questionText = input.getText().toString().trim();
             if (!TextUtils.isEmpty(questionText)) {
-                Question newQuestion = new Question(questionText,
-                        viewModel.getDefaultBackgroundColor(), viewModel.getTopicTextColor());
+                Question newQuestion = new Question(questionText);
 
                 viewModel.addCard(newQuestion);
             }
@@ -116,7 +99,7 @@ public class QuestionsFragment extends Fragment {
     }
 
     private void showAnswerDialog(Question question) {
-        String savedAnswer = loadAnswerForQuestion(question.getTitle());
+        String savedAnswer = viewModel.loadAnswerForQuestion(question.getTitle());
 
         AlertDialog.Builder builder = new AlertDialog.Builder(requireContext());
         LayoutInflater inflater = requireActivity().getLayoutInflater();
@@ -156,7 +139,7 @@ public class QuestionsFragment extends Fragment {
         EditText input = new EditText(requireContext());
         input.setHint("Введите ответ");
 
-        String savedAnswer = loadAnswerForQuestion(question.getTitle());
+        String savedAnswer = viewModel.loadAnswerForQuestion(question.getTitle());
         input.setText(savedAnswer);
 
         builder.setView(input);
@@ -165,26 +148,12 @@ public class QuestionsFragment extends Fragment {
 
             String newAnswer = input.getText().toString().trim();
             if (!newAnswer.isEmpty()) {
-                saveAnswerForQuestion(question.getTitle(), newAnswer);
+                viewModel.saveAnswerForQuestion(question.getTitle(), newAnswer);
             }
         });
 
         builder.setNegativeButton("Отмена", (dialog, which) -> dialog.cancel());
 
         builder.show();
-    }
-
-
-    private String loadAnswerForQuestion(String questionTitle) {
-        SharedPreferences prefs = requireContext().getSharedPreferences("QuestionPrefs-" + QuestionActivity.topicName, MODE_PRIVATE);
-        return prefs.getString("answers-" + questionTitle + "-" + QuestionActivity.topicName, "");
-    }
-
-    private void saveAnswerForQuestion(String questionTitle, String answer) {
-        SharedPreferences prefs = requireContext().getSharedPreferences("QuestionPrefs-" + QuestionActivity.topicName, MODE_PRIVATE);
-        SharedPreferences.Editor editor = prefs.edit();
-
-        editor.putString("answers-" + questionTitle + "-" + QuestionActivity.topicName, answer);
-        editor.apply();
     }
 }

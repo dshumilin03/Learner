@@ -17,10 +17,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 import ru.itmo.learner.R;
+import ru.itmo.learner.activities.QuestionActivity;
+import ru.itmo.learner.managers.TopicDataManager;
 import ru.itmo.learner.model.Card;
 import ru.itmo.learner.model.Topic;
 
-public class SharedViewModel extends AndroidViewModel implements CardViewModel {
+public class TopicViewModel extends AndroidViewModel implements CardViewModel {
 
     private final MutableLiveData<List<Card>> cardsLiveData;
     private MutableLiveData<Context> contextLiveData = new MutableLiveData<>();
@@ -30,20 +32,21 @@ public class SharedViewModel extends AndroidViewModel implements CardViewModel {
     private int selectedBackgroundColor;
     private int topicTextColor;
     private boolean selectionMode;
+    private final TopicDataManager dataManager;
 
-    public SharedViewModel(Application application) {
+    public TopicViewModel(Application application) {
         super(application);
         cardsLiveData = new MutableLiveData<>(new ArrayList<>());
         searchQuery = new MutableLiveData<>("");
         selectedCardsLiveData = new MutableLiveData<>(new ArrayList<>());
         selectionMode = false;
+        this.dataManager = new TopicDataManager(application);
     }
 
     public void setContext(Context context) {
-        Log.d("SharedViewModel", "Контекст в ViewModel: " + context);
         contextLiveData.setValue(context);
         initColors();
-        loadCards();
+        cardsLiveData.setValue(dataManager.load());
     }
 
     public LiveData<Context> getContextLiveData() {
@@ -66,46 +69,6 @@ public class SharedViewModel extends AndroidViewModel implements CardViewModel {
         topicTextColor = a.getColor(2, -3);
 
         a.recycle();
-    }
-
-
-
-    private void loadCards() {
-        SharedPreferences prefs = getApplication().getSharedPreferences("TopicPrefs", Context.MODE_PRIVATE);
-        String json = prefs.getString("topics", null);
-        List<Card> list = new ArrayList<>();
-
-        if (json != null) {
-            try {
-                JSONArray array = new JSONArray(json);
-
-                for (int i = 0; i < array.length(); i++) {
-                    String title = array.getString(i);
-                    list.add(new Topic(title, defaultBackgroundColor, topicTextColor));
-                }
-            } catch (JSONException e) {
-                e.printStackTrace();
-            }
-        }
-
-        cardsLiveData.setValue(list);
-    }
-
-    private void saveCards() {
-        SharedPreferences prefs = getApplication().getSharedPreferences("TopicPrefs", Context.MODE_PRIVATE);
-        SharedPreferences.Editor editor = prefs.edit();
-
-        List<Card> list = cardsLiveData.getValue();
-
-        if (list != null) {
-            JSONArray array = new JSONArray();
-
-            for (Card card : list) {
-                array.put(card.getTitle());
-            }
-            editor.putString("topics", array.toString());
-            editor.apply();
-        }
     }
 
     @Override
@@ -140,7 +103,7 @@ public class SharedViewModel extends AndroidViewModel implements CardViewModel {
         if (current != null) {
             current.add(card);
             cardsLiveData.setValue(current);
-            saveCards();
+            dataManager.save(current);
         }
     }
 
@@ -207,54 +170,29 @@ public class SharedViewModel extends AndroidViewModel implements CardViewModel {
         List<Card> allCards = cardsLiveData.getValue();
 
         if (allCards != null) {
-            List<Card> remaining = new ArrayList<>();
+            List<Card> cardsToDelete = new ArrayList<>();
 
             for (Card card : allCards) {
 
-                if (!card.isSelected()) {
-                    remaining.add(card);
-                } else {
-                    deleteCardData(card.getTitle(), card);
+                if (card.isSelected()) {
+                    cardsToDelete.add(card);
                 }
             }
 
-            cardsLiveData.setValue(remaining);
+            dataManager.delete(cardsToDelete);
+            allCards.removeAll(cardsToDelete);
+            cardsLiveData.setValue(allCards);
             selectionMode = false;
             updateSelectedCards();
-            saveCards();
         }
     }
 
-    private void deleteCardData(String cardTitle, Card card) {
-        if (card instanceof ru.itmo.learner.model.Topic) {
-
-            SharedPreferences prefs = getApplication().getSharedPreferences("QuestionPrefs-" + cardTitle, Context.MODE_PRIVATE);
-            String json = prefs.getString("questions", null);
-
-            if (json != null) {
-                try {
-                    JSONArray array = new JSONArray(json);
-
-                    for (int i = 0; i < array.length(); i++) {
-                        String questionTitle = array.getString(i);
-                        deleteAnswerData(questionTitle, cardTitle);
-                    }
-                } catch (JSONException e) {
-                    e.printStackTrace();
-                }
-                prefs.edit().clear().apply();
-            }
-        } else if (card instanceof ru.itmo.learner.model.Question) {
-            deleteAnswerData(cardTitle, "");
-        }
-    }
-
-    private void deleteAnswerData(String questionTitle, String topicName) {
-        SharedPreferences answerPrefs = getApplication().getSharedPreferences("AnswerPrefs-" + topicName + "-" + questionTitle, Context.MODE_PRIVATE);
-        answerPrefs.edit().clear().apply();
-    }
-
+    @Override
     public int getDefaultBackgroundColor() { return defaultBackgroundColor; }
+
+    @Override
     public int getSelectedBackgroundColor() { return selectedBackgroundColor; }
+
+    @Override
     public int getTopicTextColor() { return topicTextColor; }
 }

@@ -2,7 +2,6 @@ package ru.itmo.learner.viewModels;
 
 import android.app.Application;
 import android.content.Context;
-import android.content.SharedPreferences;
 import android.util.Log;
 import android.util.TypedValue;
 
@@ -11,16 +10,12 @@ import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.Transformations;
 
-import org.json.JSONArray;
-import org.json.JSONException;
-
 import java.util.ArrayList;
 import java.util.List;
 
 import ru.itmo.learner.R;
-import ru.itmo.learner.activities.QuestionActivity;
+import ru.itmo.learner.managers.QuestionDataManager;
 import ru.itmo.learner.model.Card;
-import ru.itmo.learner.model.Question;
 
 public class QuestionsViewModel extends AndroidViewModel implements CardViewModel {
 
@@ -32,6 +27,7 @@ public class QuestionsViewModel extends AndroidViewModel implements CardViewMode
     private int selectedBackgroundColor;
     private int topicTextColor;
     private boolean selectionMode;
+    private final QuestionDataManager dataManager;
 
     public QuestionsViewModel(Application application) {
         super(application);
@@ -39,19 +35,26 @@ public class QuestionsViewModel extends AndroidViewModel implements CardViewMode
         searchQuery = new MutableLiveData<>("");
         selectedCardsLiveData = new MutableLiveData<>(new ArrayList<>());
         selectionMode = false;
+        dataManager = new QuestionDataManager(application);
     }
 
-    public void setContext(Context context) {
-        Log.d("SharedViewModel", "Контекст в ViewModel: " + context);
+    public void init(Context context) {
         contextLiveData.setValue(context);
         initColors();
-        loadCards();
+        cardsLiveData.setValue(dataManager.load());
     }
 
     public List<Card> getAllCards() {
         return cardsLiveData.getValue();
     }
 
+    public void saveAnswerForQuestion(String questionTitle, String answer) {
+        dataManager.saveAnswerForQuestion(questionTitle, answer);
+    }
+
+    public String loadAnswerForQuestion(String questionTitle) {
+        return dataManager.loadAnswerForQuestion(questionTitle);
+    }
     public MutableLiveData<List<Card>> getCardsLiveData() {
         return cardsLiveData;
     }
@@ -65,45 +68,6 @@ public class QuestionsViewModel extends AndroidViewModel implements CardViewMode
         selectedBackgroundColor = value.data;
         context.getTheme().resolveAttribute(R.attr.cardsTextColor, value, true);
         topicTextColor = value.data;
-    }
-
-    private void loadCards() {
-
-        SharedPreferences prefs = getApplication().getSharedPreferences("QuestionPrefs-" + QuestionActivity.topicName, Context.MODE_PRIVATE);
-        String json = prefs.getString("questions-" + QuestionActivity.topicName, null);
-        List<Card> list = new ArrayList<>();
-
-        if (json != null) {
-            try {
-                JSONArray array = new JSONArray(json);
-                for (int i = 0; i < array.length(); i++) {
-                    String title = array.getString(i);
-                    list.add(new Question(title, defaultBackgroundColor, topicTextColor));
-                }
-            } catch (JSONException e) {
-                e.printStackTrace();
-            }
-        }
-
-        cardsLiveData.setValue(list);
-    }
-
-    private void saveCards() {
-
-        SharedPreferences prefs = getApplication().getSharedPreferences("QuestionPrefs-" + QuestionActivity.topicName, Context.MODE_PRIVATE);
-        SharedPreferences.Editor editor = prefs.edit();
-
-        List<Card> list = cardsLiveData.getValue();
-
-        if (list != null) {
-            JSONArray array = new JSONArray();
-
-            for (Card card : list) {
-                array.put(card.getTitle());
-            }
-            editor.putString("questions-" + QuestionActivity.topicName, array.toString());
-            editor.apply();
-        }
     }
 
     @Override
@@ -139,7 +103,7 @@ public class QuestionsViewModel extends AndroidViewModel implements CardViewMode
         if (current != null) {
             current.add(card);
             cardsLiveData.setValue(current);
-            saveCards();
+            dataManager.save(current);
         }
     }
 
@@ -192,36 +156,36 @@ public class QuestionsViewModel extends AndroidViewModel implements CardViewMode
         List<Card> allCards = cardsLiveData.getValue();
 
         if (allCards != null) {
-            List<Card> remaining = new ArrayList<>();
+            List<Card> cardsToDelete = new ArrayList<>();
 
             for (Card card : allCards) {
 
-                if (!card.isSelected()) {
-                    remaining.add(card);
-                } else {
-                    deleteCardData(card.getTitle(), card);
+                if (card.isSelected()) {
+                    cardsToDelete.add(card);
                 }
             }
 
-            cardsLiveData.setValue(remaining);
+            allCards.removeAll(cardsToDelete);
+            dataManager.delete(cardsToDelete);
+
+            cardsLiveData.setValue(allCards);
             selectionMode = false;
             updateSelectedCards();
-            saveCards();
         }
     }
 
-    private void deleteCardData(String cardTitle, Card card) {
-        SharedPreferences answerPrefs = getApplication().getSharedPreferences("AnswerPrefs-" + cardTitle, Context.MODE_PRIVATE);
-        answerPrefs.edit().clear().apply();
-    }
-
+    @Override
     public int getDefaultBackgroundColor() {
         return defaultBackgroundColor;
     }
 
+    @Override
+
     public int getSelectedBackgroundColor() {
         return selectedBackgroundColor;
     }
+
+    @Override
 
     public int getTopicTextColor() {
         return topicTextColor;

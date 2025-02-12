@@ -1,12 +1,10 @@
 package ru.itmo.learner.fragments;
 
 import android.app.AlertDialog;
-import android.graphics.drawable.GradientDrawable;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import androidx.fragment.app.Fragment;
@@ -16,15 +14,16 @@ import java.util.List;
 
 import ru.itmo.learner.R;
 import ru.itmo.learner.activities.QuestionActivity;
+import ru.itmo.learner.factories.CardButtonFactory;
 import ru.itmo.learner.model.Card;
 import ru.itmo.learner.model.Topic;
 import ru.itmo.learner.databinding.FragmentCardsBinding;
-import ru.itmo.learner.viewModels.SharedViewModel;
+import ru.itmo.learner.viewModels.TopicViewModel;
 
-public class CardsFragment extends Fragment {
+public class TopicsFragment extends Fragment {
 
     private FragmentCardsBinding binding;
-    private SharedViewModel viewModel;
+    private TopicViewModel viewModel;
     private LinearLayout linearLayoutButtons;
 
     @Override
@@ -38,39 +37,22 @@ public class CardsFragment extends Fragment {
     @Override
     public void onViewCreated(View view, android.os.Bundle savedInstanceState) {
 
-        viewModel = new ViewModelProvider(requireActivity()).get(SharedViewModel.class);
+        viewModel = new ViewModelProvider(requireActivity()).get(TopicViewModel.class);
         viewModel.setContext(requireContext());
 
-        viewModel.getFilteredCards().observe(getViewLifecycleOwner(), this::updateCardsUI);
-        viewModel.getCardsLiveData().observe(getViewLifecycleOwner(), this::updateCardsUI);
+        viewModel.getFilteredCards().observe(getViewLifecycleOwner(), this::updateTopicsUI);
+        viewModel.getCardsLiveData().observe(getViewLifecycleOwner(), this::updateTopicsUI);
         FloatingActionButton fab = requireActivity().findViewById(R.id.fab);
-        fab.setOnClickListener(v -> showAddCardDialog());
+        fab.setOnClickListener(v -> showAddTopicDialog());
     }
 
 
-    private void updateCardsUI(List<Card> cards) {
+    private void updateTopicsUI(List<Card> cards) {
+        CardButtonFactory factory =  new CardButtonFactory(requireContext(), linearLayoutButtons, viewModel);
         linearLayoutButtons.removeAllViews();
         for (Card card : cards) {
-            Button button = new Button(requireContext());
-            button.setText(card.getTitle());
 
-            LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.MATCH_PARENT, 150);
-            params.setMargins(64, 16, 64, 16);
-            button.setLayoutParams(params);
-
-            int backgroundColor = card.isSelected() ? viewModel.getSelectedBackgroundColor()
-                    : viewModel.getDefaultBackgroundColor();
-
-            GradientDrawable drawable = new GradientDrawable();
-            drawable.setShape(GradientDrawable.RECTANGLE);
-            drawable.setCornerRadius(30f);
-            drawable.setColor(backgroundColor);
-            button.setBackground(drawable);
-            button.setTextColor(viewModel.getTopicTextColor());
-
-            button.setOnClickListener(v -> {
-
+            factory.createCardUI(card, v -> { // OnClickListener
                 if (!viewModel.isSelectionMode()) {
                     android.content.Intent intent = new android.content.Intent(requireContext(), QuestionActivity.class);
                     intent.putExtra("topicName", card.getTitle());
@@ -78,21 +60,15 @@ public class CardsFragment extends Fragment {
                 } else {
                     viewModel.toggleCardSelection(card);
                 }
-            });
-
-            button.setOnLongClickListener(v -> {
-
+            }, v -> { // OnLongClickListener
                 viewModel.toggleCardSelection(card);
 
                 return true;
             });
-
-            linearLayoutButtons.addView(button);
-            card.setButton(button);
         }
     }
 
-    private void showAddCardDialog() {
+    private void showAddTopicDialog() {
         AlertDialog.Builder builder = new AlertDialog.Builder(requireContext());
         builder.setTitle("Введите название карточки");
 
@@ -105,7 +81,7 @@ public class CardsFragment extends Fragment {
             String title = input.getText().toString().trim();
             if (!TextUtils.isEmpty(title)) {
 
-                Card newTopic = new Topic(title, viewModel.getDefaultBackgroundColor(), viewModel.getTopicTextColor());
+                Card newTopic = new Topic(title);
                 viewModel.addCard(newTopic);
             }
         });

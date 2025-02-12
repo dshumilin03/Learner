@@ -23,7 +23,7 @@ import ru.itmo.learner.activities.MainActivity;
 import ru.itmo.learner.databinding.FragmentToolbarBinding;
 import ru.itmo.learner.viewModels.CardViewModel;
 import ru.itmo.learner.viewModels.QuestionsViewModel;
-import ru.itmo.learner.viewModels.SharedViewModel;
+import ru.itmo.learner.viewModels.TopicViewModel;
 
 public class ToolbarFragment extends Fragment {
 
@@ -52,12 +52,9 @@ public class ToolbarFragment extends Fragment {
     public void onViewCreated(@NonNull View view, Bundle savedInstanceState) {
 
         if (getActivity() instanceof MainActivity) {
-            viewModel = new ViewModelProvider(requireActivity()).get(SharedViewModel.class);
-            Log.d(ToolbarFragment.class.toString(), "Поставился SharedViewModel");
+            viewModel = new ViewModelProvider(requireActivity()).get(TopicViewModel.class);
         } else {
             viewModel = new ViewModelProvider(requireActivity()).get(QuestionsViewModel.class);
-            Log.d(ToolbarFragment.class.toString(), "Поставился QuestionsViewModel");
-
         }
 
         MenuHost menuHost = requireActivity();
